@@ -27,7 +27,6 @@ jobs:
           # Release version is ref name without leading character.
           RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-          # echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Compile linux AMD64
         run: |
