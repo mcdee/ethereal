@@ -24,24 +24,28 @@ jobs:
 
       - name: Set env
         run: |
-         echo "GO111MODULE=on" >> $GITHUB_ENV
-         # Release tag comes from the github reference.
-         RELEASE_TAG=$(echo ${GITHUB_REF} | sed -e 's!.*/!!')
-         echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
-         echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
-         # Ensure the release tag has expected format.
-         echo ${RELEASE_TAG} | grep -q '^[vt]' || exit 1
-         # Release version is same as release tag without leading 'v'.
-         RELEASE_VERSION=$(echo ${GITHUB_REF} | sed -e 's!.*/[vt]!!')
-         echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-         echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+          echo "GO111MODULE=on" >> $GITHUB_ENV
+          # Release tag comes from the github reference.
+          RELEASE_TAG=$(echo ${GITHUB_REF} | sed -e 's!.*/!!')
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          # Release version is same as release tag without leading 'v'.
+          RELEASE_VERSION=$(echo ${github.ref_type} | sed -e 's!.*/[vt]!!')
+          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+          echo Env
+          cat $GITHUB_ENV
+          echo End Env
 
       - name: Compile linux AMD64
         run: |
-          GOOS=linux GOARCH=amd64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${RELEASE_VERSION}"
-          tar zcf ethereal-${RELEASE_VERSION}-linux-amd64.tar.gz ethereal
-          sha256sum ethereal-${RELEASE_VERSION}-linux-amd64.tar.gz >ethereal-${RELEASE_VERSION}-linux-amd64.tar.gz.sha256
+          GOOS=linux GOARCH=amd64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${env.RELEASE_VERSION}"
+          tar zcf ethereal-${env.RELEASE_VERSION}-linux-amd64.tar.gz ethereal
+          sha256sum ethereal-${env.RELEASE_VERSION}-linux-amd64.tar.gz >ethereal-${env.RELEASE_VERSION}-linux-amd64.tar.gz.sha256
 
+          echo ls
+          ls -l
+          echo End ls
       # - name: Compile linux ARM64
       #   run: |
       #     GOOS=linux GOARCH=arm64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${RELEASE_VERSION}"
