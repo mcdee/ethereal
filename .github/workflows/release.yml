@@ -42,38 +42,38 @@ jobs:
           tar zcf ethereal-${RELEASE_VERSION}-linux-amd64.tar.gz ethereal
           sha256sum ethereal-${RELEASE_VERSION}-linux-amd64.tar.gz >ethereal-${RELEASE_VERSION}-linux-amd64.tar.gz.sha256
 
-      - name: Compile linux ARM64
-        run: |
-          GOOS=linux GOARCH=arm64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${RELEASE_VERSION}"
-          tar zcf ethereal-${RELEASE_VERSION}-linux-arm64.tar.gz ethereal
-          sha256sum ethereal-${RELEASE_VERSION}-linux-arm64.tar.gz >ethereal-${RELEASE_VERSION}-linux-arm64.tar.gz.sha256
+      # - name: Compile linux ARM64
+      #   run: |
+      #     GOOS=linux GOARCH=arm64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${RELEASE_VERSION}"
+      #     tar zcf ethereal-${RELEASE_VERSION}-linux-arm64.tar.gz ethereal
+      #     sha256sum ethereal-${RELEASE_VERSION}-linux-arm64.tar.gz >ethereal-${RELEASE_VERSION}-linux-arm64.tar.gz.sha256
 
-      - name: Compile windows
-        run: |
-          GOOS=windows GOARCH=amd64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${RELEASE_VERSION}"
-          zip --junk-paths ethereal-${RELEASE_VERSION}-windows-exe.zip ethereal.exe
-          sha256sum ethereal-${RELEASE_VERSION}-windows-exe.zip >ethereal-${RELEASE_VERSION}-windows-exe.zip.sha256
+      # - name: Compile windows
+      #   run: |
+      #     GOOS=windows GOARCH=amd64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${RELEASE_VERSION}"
+      #     zip --junk-paths ethereal-${RELEASE_VERSION}-windows-exe.zip ethereal.exe
+      #     sha256sum ethereal-${RELEASE_VERSION}-windows-exe.zip >ethereal-${RELEASE_VERSION}-windows-exe.zip.sha256
 
-      - name: Compile osx AMD64
-        run: |
-          GOOS=darwin GOARCH=amd64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${RELEASE_VERSION}"
-          tar zcf ethereal-${RELEASE_VERSION}-darwin-amd64.tar.gz ethereal
-          sha256sum ethereal-${RELEASE_VERSION}-darwin-amd64.tar.gz >ethereal-${RELEASE_VERSION}-darwin-amd64.tar.gz.sha256
+      # - name: Compile osx AMD64
+      #   run: |
+      #     GOOS=darwin GOARCH=amd64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${RELEASE_VERSION}"
+      #     tar zcf ethereal-${RELEASE_VERSION}-darwin-amd64.tar.gz ethereal
+      #     sha256sum ethereal-${RELEASE_VERSION}-darwin-amd64.tar.gz >ethereal-${RELEASE_VERSION}-darwin-amd64.tar.gz.sha256
 
       - name: Create release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           # token: ${{ secrets.GITHUB_TOKEN }}
-          release_name: Release ${{ env.RELEASE_VERSION }}
+          name: Release ${{ env.RELEASE_VERSION }}
           draft: true
           prerelease: false
           files: |
-            ethereal-${RELEASE_VERSION}-linux-amd64.tar.gz
-            ethereal-${RELEASE_VERSION}-linux-amd64.tar.gz.sha256
-            ethereal-${RELEASE_VERSION}-linux-arm64.tar.gz
-            ethereal-${RELEASE_VERSION}-linux-arm64.tar.gz.sha256
-            ethereal-${RELEASE_VERSION}-windows-exe.zip
-            ethereal-${RELEASE_VERSION}-windows-exe.zip.sha256
-            ethereal-${RELEASE_VERSION}-darwin-amd64.tar.gz
-            ethereal-${RELEASE_VERSION}-darwin-amd64.tar.gz.sha256
+            ethereal-${env.RELEASE_VERSION}-linux-amd64.tar.gz
+            ethereal-${env.RELEASE_VERSION}-linux-amd64.tar.gz.sha256
+            # ethereal-${env.RELEASE_VERSION}-linux-arm64.tar.gz
+            # ethereal-${env.RELEASE_VERSION}-linux-arm64.tar.gz.sha256
+            # ethereal-${env.RELEASE_VERSION}-windows-exe.zip
+            # ethereal-${env.RELEASE_VERSION}-windows-exe.zip.sha256
+            # ethereal-${env.RELEASE_VERSION}-darwin-amd64.tar.gz
+            # ethereal-${env.RELEASE_VERSION}-darwin-amd64.tar.gz.sha256
