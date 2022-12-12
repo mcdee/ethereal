@@ -70,10 +70,12 @@ jobs:
         if: contains(matrix.os, 'windows')
         run: |
           go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
+          choco install zip
           zip --junk-paths ethereal-${{ github.ref_name }}-windows-exe.zip ethereal.exe
-          sha256sum ethereal-${{ github.ref_name }}-windows-exe.zip >ethereal-${{ github.ref_name }}-windows-exe.zip.sha256
+          $FileHash=(certutil -hashfile ethereal-${{ github.ref_name }}-windows-exe.zip SHA256 | findstr /v hash | findstr /v SHA).replace(" ", "")
+          echo "$FileHash" > ethereal-${{ github.ref_name }}-windows-exe.zip.sha256
           echo windows
-          ls -l
+          dir
           echo end windows
 
       - name: Compile (macos)
@@ -86,6 +88,15 @@ jobs:
           echo macos
           ls -l
           echo end macos
+
+  upload:
+    runs-on: ${{ matrix.os }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
 
        # - name: Create release
        #   id: create_release
