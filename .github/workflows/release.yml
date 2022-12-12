@@ -21,7 +21,7 @@ jobs:
       - id: binary
         run: |
           BINARY=$(basename ${{ github.repository }})
-          echo "binary=$(BINARY}" >> $GITHUB_OUTPUT
+          echo "binary=${BINARY}" >> $GITHUB_OUTPUT
 
   # Create a github release to hold the assets once built.
   create_release:
