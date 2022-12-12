@@ -21,7 +21,7 @@ jobs:
           draft: true
           prerelease: false
         env:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Set environmental variables that will be available to all builds.
   set_env:
