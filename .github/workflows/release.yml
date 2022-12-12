@@ -8,7 +8,7 @@ on:
 
 jobs:
   # Set variables that will be available to all builds.
-  vars:
+  env_vars:
     runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.release_version.outputs.release_version }}
@@ -26,7 +26,7 @@ jobs:
   # Create a github release to hold the assets once built.
   create_release:
     runs-on: ubuntu-latest
-    needs: vars
+    needs: env_vars
     outputs:
       upload_url: ${{ steps.release_action.outputs.upload_url }}
     steps:
@@ -34,14 +34,14 @@ jobs:
         id: release_action
         uses: ncipollo/release-action@v1
         with:
-          name: Release ${{ needs.vars.outputs.release_version }}
+          name: Release ${{ needs.env_vars.outputs.release_version }}
           draft: true
           prerelease: false
 
   # Build and pack the binaries for linux.
   build_linux:
     runs-on: ubuntu-latest
-    needs: [create_release, vars]
+    needs: [create_release, env_vars]
     steps:
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -59,17 +59,17 @@ jobs:
 
       - name: Compile
         run: |
-          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/${{ github.repository }}/cmd.ReleaseVersion=${{ needs.vars.outputs.release_version }}"
-          tar zcf ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-amd64.tar.gz ${{ needs.vars.outputs.binary }}
-          sha256sum ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-amd64.tar.gz | sed -e 's/ .*//' >${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-amd64.tar.gz.sha256
+          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/${{ github.repository }}/cmd.ReleaseVersion=${{ needs.env_vars.outputs.release_version }}"
+          tar zcf ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-amd64.tar.gz ${{ needs.env_vars.outputs.binary }}
+          sha256sum ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-amd64.tar.gz | sed -e 's/ .*//' >${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-amd64.tar.gz.sha256
       - name: Upload binary
         uses: actions/upload-release-asset@v1
-        vars:
+        env_vars:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-amd64.tar.gz
-          asset_name: ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-amd64.tar.gz
+          asset_path: ./${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-amd64.tar.gz
+          asset_name: ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-amd64.tar.gz
           asset_content_type: application/octet-stream
 
       - name: Upload hash
@@ -78,15 +78,15 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-amd64.tar.gz.sha256
-          asset_name: ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-amd64.tar.gz.sha256
+          asset_path: ./${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-amd64.tar.gz.sha256
+          asset_name: ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-amd64.tar.gz.sha256
           asset_content_type: text/plain
 
       - name: Cross compile (ARM64)
         run: |
-          GOOS=linux GOARCH=arm64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/${{ github.repository }}/cmd.ReleaseVersion=${{ needs.vars.outputs.release_version }}"
-          tar zcf ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-arm64.tar.gz ${{ needs.vars.outputs.binary }}
-          sha256sum ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-arm64.tar.gz | sed -e 's/ .*//' >${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-arm64.tar.gz.sha256
+          GOOS=linux GOARCH=arm64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/${{ github.repository }}/cmd.ReleaseVersion=${{ needs.env_vars.outputs.release_version }}"
+          tar zcf ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-arm64.tar.gz ${{ needs.env_vars.outputs.binary }}
+          sha256sum ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-arm64.tar.gz | sed -e 's/ .*//' >${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-arm64.tar.gz.sha256
 
       - name: Upload binary (ARM64)
         uses: actions/upload-release-asset@v1
@@ -94,8 +94,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-arm64.tar.gz
-          asset_name: ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-arm64.tar.gz
+          asset_path: ./${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-arm64.tar.gz
+          asset_name: ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-arm64.tar.gz
           asset_content_type: application/octet-stream
 
       - name: Upload hash (ARM64)
@@ -104,14 +104,14 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-arm64.tar.gz.sha256
-          asset_name: ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-linux-arm64.tar.gz.sha256
+          asset_path: ./${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-arm64.tar.gz.sha256
+          asset_name: ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-linux-arm64.tar.gz.sha256
           asset_content_type: text/plain
 
   # Build and pack the binaries for OSX.
   build_macos:
     runs-on: macos-latest
-    needs: [create_release, vars]
+    needs: [create_release, env_vars]
     steps:
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -129,18 +129,18 @@ jobs:
 
       - name: Compile
         run: |
-          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/${{ github.repository }}/cmd.ReleaseVersion=${{ needs.vars.outputs.release_version }}"
-          tar zcf ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-darwin-amd64.tar.gz ${{ needs.vars.outputs.binary }}
+          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/${{ github.repository }}/cmd.ReleaseVersion=${{ needs.env_vars.outputs.release_version }}"
+          tar zcf ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-darwin-amd64.tar.gz ${{ needs.env_vars.outputs.binary }}
           brew install coreutils
-          sha256sum ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-darwin-amd64.tar.gz | sed -e 's/ .*//' >${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-darwin-amd64.tar.gz.sha256
+          sha256sum ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-darwin-amd64.tar.gz | sed -e 's/ .*//' >${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-darwin-amd64.tar.gz.sha256
       - name: Upload binary
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-darwin-amd64.tar.gz
-          asset_name: ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-darwin-amd64.tar.gz
+          asset_path: ./${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-darwin-amd64.tar.gz
+          asset_name: ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-darwin-amd64.tar.gz
           asset_content_type: application/octet-stream
 
       - name: Upload hash
@@ -149,14 +149,14 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-darwin-amd64.tar.gz.sha256
-          asset_name: ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-darwin-amd64.tar.gz.sha256
+          asset_path: ./${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-darwin-amd64.tar.gz.sha256
+          asset_name: ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-darwin-amd64.tar.gz.sha256
           asset_content_type: text/plain
 
   # Build and pack the binaries for Windows.
   build_windows:
     runs-on: windows-latest
-    needs: [create_release, vars]
+    needs: [create_release, env_vars]
     steps:
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -174,11 +174,11 @@ jobs:
 
       - name: Compile
         run: |
-          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/${{ github.repository }}/cmd.ReleaseVersion=${{ needs.vars.outputs.release_version }}"
+          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/${{ github.repository }}/cmd.ReleaseVersion=${{ needs.env_vars.outputs.release_version }}"
           choco install zip
-          zip --junk-paths ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-windows-exe.zip ${{ needs.vars.outputs.binary }}.exe
-          $FileHash=(certutil -hashfile ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-windows-exe.zip SHA256 | findstr /v hash | findstr /v SHA).replace(" ", "")
-          echo "$FileHash" > ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-windows-exe-zip.sha256
+          zip --junk-paths ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-windows-exe.zip ${{ needs.env_vars.outputs.binary }}.exe
+          $FileHash=(certutil -hashfile ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-windows-exe.zip SHA256 | findstr /v hash | findstr /v SHA).replace(" ", "")
+          echo "$FileHash" > ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-windows-exe-zip.sha256
 
       - name: Upload binary
         uses: actions/upload-release-asset@v1
@@ -186,8 +186,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-windows-exe.zip
-          asset_name: ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-windows-exe.zip
+          asset_path: ./${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-windows-exe.zip
+          asset_name: ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-windows-exe.zip
           asset_content_type: application/octet-stream
 
       - name: Upload hash
@@ -196,6 +196,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-windows-exe-zip.sha256
-          asset_name: ${{ needs.vars.outputs.binary }}-${{ needs.vars.outputs.release_version }}-windows-exe-zip.sha256
+          asset_path: ./${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-windows-exe-zip.sha256
+          asset_name: ${{ needs.env_vars.outputs.binary }}-${{ needs.env_vars.outputs.release_version }}-windows-exe-zip.sha256
           asset_content_type: text/plain
