@@ -35,8 +35,7 @@ jobs:
           # Release version is ref name without leading character.
           RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-          echo id is ${{ needs.create_release.outputs.id }}
-          echo upload_url is ${{ needs.create_release.outputs.upload_url }}
+          echo ***** upload_url is ${{ needs.create_release.outputs.upload_url }}
 
 
   # Build and pack the binaries for linux.
