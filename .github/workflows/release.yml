@@ -22,14 +22,22 @@ jobs:
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  # Create a github release to hold the assets once built.
-  build:
-    runs-on: ${{ matrix.os }}
+  # Set environmental variables that will be available to all builds.
+  set_env:
+    runs-on: ubuntu-latest
     needs: create_release
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Set release variables
+        run: |
+          # echo "GO111MODULE=on" >> $GITHUB_ENV
+          # Release version is ref name without leading character.
+          RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
+          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
+
+
+  # Build and pack the binaries for linux.
+  build_linux:
+    runs-on: ubuntu-latest
     steps:
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -45,58 +53,146 @@ jobs:
       - name: Fetch repository dependencies
         run: go get -v -t ./...
 
-      # - name: Set environment variables
-      #   run: |
-      #     echo "GO111MODULE=on" >> $GITHUB_ENV
-      #     # Release version is ref name without leading character.
-      #     RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
-      #     echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-
-      - name: Compile (linux AMD64)
-        if: contains(matrix.os, 'ubuntu')
+      - name: Compile
         run: |
           go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
           tar zcf ethereal-${{ github.ref_name }}-linux-amd64.tar.gz ethereal
-          sha256sum ethereal-${{ github.ref_name }}-linux-amd64.tar.gz >ethereal-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
+          sha256sum ethereal-${{ github.ref_name }}-linux-amd64.tar.gz | sed -e 's/ .*//' >ethereal-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
+      - name: Upload binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./ethereal-${{ github.ref_name }}-linux-amd64.tar.gz
+          asset_name: ethereal-${{ github.ref_name }}-linux-amd64.tar.gz
+          asset_content_type: application/octet-stream
 
-      - name: Cross compile (linux ARM64)
-        if: contains(matrix.os, 'ubuntu')
+      - name: Upload hash
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./ethereal-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
+          asset_name: ethereal-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
+          asset_content_type: text/plain
+
+      - name: Cross compile (ARM64)
         run: |
           GOOS=linux GOARCH=arm64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
           tar zcf ethereal-${{ github.ref_name }}-linux-arm64.tar.gz ethereal
-          sha256sum ethereal-${{ github.ref_name }}-linux-arm64.tar.gz >ethereal-${{ github.ref_name }}-linux-arm64.tar.gz.sha256
+          sha256sum ethereal-${{ github.ref_name }}-linux-arm64.tar.gz | sed -e 's/ .*//' >ethereal-${{ github.ref_name }}-linux-arm64.tar.gz.sha256
 
-      - name: Compile (windows)
-        if: contains(matrix.os, 'windows')
+      - name: Upload binary (ARM64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./ethereal-${{ github.ref_name }}-linux-arm64.tar.gz
+          asset_name: ethereal-${{ github.ref_name }}-linux-arm64.tar.gz
+          asset_content_type: application/octet-stream
+
+      - name: Upload hash (ARM64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./ethereal-${{ github.ref_name }}-linux-arm64.tar.gz.sha256
+          asset_name: ethereal-${{ github.ref_name }}-linux-arm64.tar.gz.sha256
+          asset_content_type: text/plain
+
+  # Build and pack the binaries for OSX.
+  build_macos:
+    runs-on: macos-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ^1.19
+
+      - name: Check out repository into the Go module directory
+        uses: actions/checkout@v3
+
+      - name: Select correct tag
+        run: git checkout ${{ github.ref_name }}
+
+      - name: Fetch repository dependencies
+        run: go get -v -t ./...
+
+      - name: Compile
+        run: |
+          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
+          tar zcf ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz ethereal
+          brew install coreutils
+          sha256sum ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz | sed -e 's/ .*//' >ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz.sha256
+      - name: Upload binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz
+          asset_name: ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz
+          asset_content_type: application/octet-stream
+
+      - name: Upload hash
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz.sha256
+          asset_name: ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz.sha256
+          asset_content_type: text/plain
+
+  # Build and pack the binaries for Windows.
+  build_windows:
+    runs-on: windows-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ^1.19
+
+      - name: Check out repository into the Go module directory
+        uses: actions/checkout@v3
+
+      - name: Select correct tag
+        run: git checkout ${{ github.ref_name }}
+
+      - name: Fetch repository dependencies
+        run: go get -v -t ./...
+
+      - name: Compile
         run: |
           go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
           choco install zip
           zip --junk-paths ethereal-${{ github.ref_name }}-windows-exe.zip ethereal.exe
           $FileHash=(certutil -hashfile ethereal-${{ github.ref_name }}-windows-exe.zip SHA256 | findstr /v hash | findstr /v SHA).replace(" ", "")
           echo "$FileHash" > ethereal-${{ github.ref_name }}-windows-exe.zip.sha256
-          echo windows
-          dir
-          echo end windows
 
-      - name: Compile (macos)
-        if: contains(matrix.os, 'macos')
-        run: |
-          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
-          tar zcf ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz ethereal
-          brew install coreutils
-          sha256sum ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz >ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz.sha256
-          echo macos
-          ls -l
-          echo end macos
+      - name: Upload binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./ethereal-${{ github.ref_name }}-windows-exe.zip
+          asset_name: ethereal-${{ github.ref_name }}-windows-exe.zip
+          asset_content_type: application/octet-stream
 
-          #  upload:
-          #    runs-on: ${{ matrix.os }}
-          #    needs: build
-          #    strategy:
-          #      fail-fast: false
-          #      matrix:
-          #        os: [ubuntu-latest, macos-latest, windows-latest]
-          #    steps:
+      - name: Upload hash
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./ethereal-${{ github.ref_name }}-windows-exe-zip.sha256
+          asset_name: ethereal-${{ github.ref_name }}-windows-exe-zip.sha256
+          asset_content_type: text/plain
 
        # - name: Create release
        #   id: create_release
