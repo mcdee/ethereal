@@ -9,9 +9,9 @@ on:
 jobs:
   # Create a github release to hold the assets once built.
   create_release:
-    runs-on: ubuntu-22.04
-    # outputs:
-    #   upload_url: ${{ steps.create_release.outputs.upload_url }}
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Create Release
         id: create_release
