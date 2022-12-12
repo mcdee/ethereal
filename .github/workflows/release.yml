@@ -15,11 +15,11 @@ jobs:
     steps:
       - name: Create Release
         id: create_release
-        uses: ncipollo/release-action@v1
+        # uses: ncipollo/release-action@v1
+        uses: actions/create-release@v1
         with:
           draft: true
           prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
 
   # Set environmental variables that will be available to all builds.
   set_env:
@@ -32,8 +32,8 @@ jobs:
           # Release version is ref name without leading character.
           RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-          echo ${{ needs.create_release.outputs.upload_url }}
-          echo ${{ needs.create_release.outputs.id }}
+          echo Upload URL is ${{ needs.create_release.outputs.upload_url }}
+          echo ID is ${{ needs.create_release.outputs.id }}
 
 
   # Build and pack the binaries for linux.
