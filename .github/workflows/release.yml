@@ -40,7 +40,7 @@ jobs:
   # Build and pack the binaries for linux.
   build_linux:
     runs-on: ubuntu-latest
-    needs: create_release, set_env]
+    needs: [create_release, set_env]
     steps:
       - name: Set up Go
         uses: actions/setup-go@v3
