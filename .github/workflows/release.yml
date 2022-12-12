@@ -45,42 +45,44 @@ jobs:
       - name: Fetch repository dependencies
         run: go get -v -t ./...
 
-      - name: Set environment variables
-        run: |
-          echo "GO111MODULE=on" >> $GITHUB_ENV
-          # Release version is ref name without leading character.
-          RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
-          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
+      # - name: Set environment variables
+      #   run: |
+      #     echo "GO111MODULE=on" >> $GITHUB_ENV
+      #     # Release version is ref name without leading character.
+      #     RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
+      #     echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
 
       - name: Compile (linux AMD64)
-        if: contains(matrix.os, 'linux')
+        if: contains(matrix.os, 'ubuntu')
         run: |
-          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ env.RELEASE_VERSION }}"
-          tar zcf ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz ethereal
-          sha256sum ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz >ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz.sha256
+          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
+          tar zcf ethereal-${{ github.ref_name }}-linux-amd64.tar.gz ethereal
+          sha256sum ethereal-${{ github.ref_name }}-linux-amd64.tar.gz >ethereal-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
 
       - name: Cross compile (linux ARM64)
-        if: contains(matrix.os, 'linux')
+        if: contains(matrix.os, 'ubuntu')
         run: |
-          GOOS=linux GOARCH=arm64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ env.RELEASE_VERSION }}"
-          tar zcf ethereal-${{ env.RELEASE_VERSION }}-linux-arm64.tar.gz ethereal
-          sha256sum ethereal-${{ env.RELEASE_VERSION }}-linux-arm64.tar.gz >ethereal-${{ env.RELEASE_VERSION }}-linux-arm64.tar.gz.sha256
+          GOOS=linux GOARCH=arm64 go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
+          tar zcf ethereal-${{ github.ref_name }}-linux-arm64.tar.gz ethereal
+          sha256sum ethereal-${{ github.ref_name }}-linux-arm64.tar.gz >ethereal-${{ github.ref_name }}-linux-arm64.tar.gz.sha256
 
       - name: Compile (windows)
         if: contains(matrix.os, 'windows')
         run: |
-          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ env.RELEASE_VERSION }}"
-          zip --junk-paths ethereal-${{ env.RELEASE_VERSION }}-windows-exe.zip ethereal.exe
-          sha256sum ethereal-${{ env.RELEASE_VERSION }}-windows-exe.zip >ethereal-${{ env.RELEASE_VERSION }}-windows-exe.zip.sha256
+          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
+          zip --junk-paths ethereal-${{ github.ref_name }}-windows-exe.zip ethereal.exe
+          sha256sum ethereal-${{ github.ref_name }}-windows-exe.zip >ethereal-${{ github.ref_name }}-windows-exe.zip.sha256
           echo windows
           ls -l
           echo end windows
 
       - name: Compile (macos)
+        if: contains(matrix.os, 'macos')
         run: |
-          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ env.RELEASE_VERSION }}"
-          tar zcf ethereal-${{ env.RELEASE_VERSION }}-darwin-amd64.tar.gz ethereal
-          sha256sum ethereal-${{ env.RELEASE_VERSION }}-darwin-amd64.tar.gz >ethereal-${{ env.RELEASE_VERSION }}-darwin-amd64.tar.gz.sha256
+          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
+          tar zcf ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz ethereal
+          brew install coreutils
+          sha256sum ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz >ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz.sha256
           echo macos
           ls -l
           echo end macos
@@ -89,15 +91,15 @@ jobs:
        #   id: create_release
        #   uses: softprops/action-gh-release@v1
        #   with:
-       #     name: Release ${{ env.RELEASE_VERSION }}
+       #     name: Release ${{ github.ref_name }}
        #     draft: true
        #     prerelease: false
        #     files: |
-       #       ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz
-       #       ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz.sha256
-       #       ethereal-${{ env.RELEASE_VERSION }}-linux-arm64.tar.gz
-       #       ethereal-${{ env.RELEASE_VERSION }}-linux-arm64.tar.gz.sha256
-       #       ethereal-${{ env.RELEASE_VERSION }}-windows-exe.zip
-       #       ethereal-${{ env.RELEASE_VERSION }}-windows-exe.zip.sha256
-       #       ethereal-${{ env.RELEASE_VERSION }}-darwin-amd64.tar.gz
-       #       ethereal-${{ env.RELEASE_VERSION }}-darwin-amd64.tar.gz.sha256
+       #       ethereal-${{ github.ref_name }}-linux-amd64.tar.gz
+       #       ethereal-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
+       #       ethereal-${{ github.ref_name }}-linux-arm64.tar.gz
+       #       ethereal-${{ github.ref_name }}-linux-arm64.tar.gz.sha256
+       #       ethereal-${{ github.ref_name }}-windows-exe.zip
+       #       ethereal-${{ github.ref_name }}-windows-exe.zip.sha256
+       #       ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz
+       #       ethereal-${{ github.ref_name }}-darwin-amd64.tar.gz.sha256
