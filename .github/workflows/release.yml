@@ -7,9 +7,21 @@ on:
     - 't*'
 
 jobs:
+  # Set environmental variables that will be available to all builds.
+  set_env:
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.release_version.outputs.release_version }}
+    steps:
+      - id: release_version
+        run: |
+          RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
+          echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+
   # Create a github release to hold the assets once built.
   create_release:
     runs-on: ubuntu-latest
+    needs: set_env
     outputs:
       upload_url: ${{ steps.release_action.outputs.upload_url }}
     steps:
@@ -18,24 +30,13 @@ jobs:
         uses: ncipollo/release-action@v1
         # uses: actions/create-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
+          # tag_name: ${{ github.ref }}
+          # release_name: Release ${{ needs.set_env.outputs.release_version }}
+          name: Release ${{ needs.set_env.outputs.release_version }}
           draft: true
           prerelease: false
         # env:
         #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Set environmental variables that will be available to all builds.
-  set_env:
-    runs-on: ubuntu-latest
-    needs: create_release
-    outputs:
-      release_version: ${{ steps.release_version.outputs.release_version }}
-    steps:
-      - id: release_version
-        run: |
-          RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
-          echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
 
   # Build and pack the binaries for linux.
   build_linux:
