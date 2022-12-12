@@ -19,6 +19,7 @@ jobs:
         uses: actions/create-release@v1
         with:
           tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
           draft: true
           prerelease: false
         env:
@@ -35,7 +36,6 @@ jobs:
           # Release version is ref name without leading character.
           RELEASE_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^[vt]//')
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-          echo ***** upload_url is ${{ needs.create_release.outputs.upload_url }}
 
   # Build and pack the binaries for linux.
   build_linux:
@@ -58,18 +58,17 @@ jobs:
 
       - name: Compile
         run: |
-          export
-          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ github.ref_name }}"
-          tar zcf ethereal-${{ github.ref_name }}-linux-amd64.tar.gz ethereal
-          sha256sum ethereal-${{ github.ref_name }}-linux-amd64.tar.gz | sed -e 's/ .*//' >ethereal-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
+          go build -tags osusergo,netgo -ldflags="-extldflags=-static" -v -ldflags="-X github.com/wealdtech/ethereal/cmd.ReleaseVersion=${{ env.RELEASE_VERSION }}"
+          tar zcf ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz ethereal
+          sha256sum ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz | sed -e 's/ .*//' >ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz.sha256
       - name: Upload binary
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./ethereal-${{ github.ref_name }}-linux-amd64.tar.gz
-          asset_name: ethereal-${{ github.ref_name }}-linux-amd64.tar.gz
+          asset_path: ./ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz
+          asset_name: ethereal-${{ env.RELEASE_VERSION }}-linux-amd64.tar.gz
           asset_content_type: application/octet-stream
 
       - name: Upload hash
@@ -178,7 +177,7 @@ jobs:
           choco install zip
           zip --junk-paths ethereal-${{ github.ref_name }}-windows-exe.zip ethereal.exe
           $FileHash=(certutil -hashfile ethereal-${{ github.ref_name }}-windows-exe.zip SHA256 | findstr /v hash | findstr /v SHA).replace(" ", "")
-          echo "$FileHash" > ethereal-${{ github.ref_name }}-windows-exe.zip.sha256
+          echo "$FileHash" > ethereal-${{ github.ref_name }}-windows-exe-zip.sha256
 
       - name: Upload binary
         uses: actions/upload-release-asset@v1
