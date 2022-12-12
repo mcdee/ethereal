@@ -11,19 +11,19 @@ jobs:
   create_release:
     runs-on: ubuntu-latest
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      upload_url: ${{ steps.release_action.outputs.upload_url }}
     steps:
       - name: Create Release
-        id: create_release
-        # uses: ncipollo/release-action@v1
-        uses: actions/create-release@v1
+        id: release_action
+        uses: ncipollo/release-action@v1
+        # uses: actions/create-release@v1
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
           draft: true
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Set environmental variables that will be available to all builds.
   set_env:
